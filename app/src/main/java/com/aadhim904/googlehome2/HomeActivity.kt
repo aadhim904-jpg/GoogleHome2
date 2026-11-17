@@ -659,6 +659,133 @@ private fun formatBytes(bytes: Long): String {
             hidePanel(rightPanel)
         } else {
             super.onBackPressed()
+
+      
+private fun showBootAnimation() {
+    val boot = BootAnimationView()
+
+    root.addView(
+        boot,
+        FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        )
+    )
+
+    boot.bringToFront()
+
+    boot.postDelayed({
+        boot.animate()
+            .alpha(0f)
+            .setDuration(350)
+            .withEndAction {
+                root.removeView(boot)
+            }
+            .start()
+    }, 2600)
+}
+
+private inner class BootAnimationView : View(this@HomeActivity) {
+
+    private var angle = 0f
+
+    private val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = dp(8).toFloat()
+    }
+
+    private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.WHITE
+        textAlign = Paint.Align.CENTER
+        typeface = Typeface.create(
+            "sans-serif",
+            Typeface.NORMAL
+        )
+    }
+
+    private val colors = intArrayOf(
+        Color.CYAN,
+        Color.BLUE,
+        Color.MAGENTA,
+        Color.RED,
+        Color.YELLOW,
+        Color.GREEN,
+        Color.CYAN
+    )
+
+    private val animator = ValueAnimator.ofFloat(0f, 360f).apply {
+        duration = 2200
+        repeatCount = ValueAnimator.INFINITE
+        interpolator = LinearInterpolator()
+
+        addUpdateListener {
+            angle = it.animatedValue as Float
+            invalidate()
+        }
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+
+        canvas.drawColor(Color.BLACK)
+
+        val boxWidth = minOf(width * 0.42f, dp(560).toFloat())
+        val boxHeight = boxWidth * 0.31f
+
+        val cx = width / 2f
+        val cy = height / 2f
+
+        val rect = RectF(
+            cx - boxWidth / 2,
+            cy - boxHeight / 2,
+            cx + boxWidth / 2,
+            cy + boxHeight / 2
+        )
+
+        val gradient = SweepGradient(
+            cx,
+            cy,
+            colors,
+            null
+        )
+
+        val matrix = Matrix()
+        matrix.setRotate(angle, cx, cy)
+        gradient.setLocalMatrix(matrix)
+
+        borderPaint.shader = gradient
+
+        canvas.drawRoundRect(
+            rect,
+            dp(28).toFloat(),
+            dp(28).toFloat(),
+            borderPaint
+        )
+
+        textPaint.textSize = boxHeight * 0.32f
+
+        val font = textPaint.fontMetrics
+        val baseline = cy - (font.ascent + font.descent) / 2
+
+        canvas.drawText(
+            "Google TV",
+            cx,
+            baseline,
+            textPaint
+        )
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        animator.start()
+    }
+
+    override fun onDetachedFromWindow() {
+        animator.cancel()
+        super.onDetachedFromWindow()
+    }
+}
+      
         }
     }
 }
