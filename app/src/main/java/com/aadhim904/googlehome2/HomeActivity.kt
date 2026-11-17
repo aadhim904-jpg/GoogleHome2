@@ -185,16 +185,20 @@ group.forEach { info ->
         }
     }
 
-    val icon = ImageView(this).apply {
-        setImageDrawable(info.loadIcon(packageManager))
-        scaleType = ImageView.ScaleType.FIT_CENTER
-        setPadding(dp(10), dp(10), dp(10), dp(10))
+    
+val icon = ImageView(this).apply {
+    setImageDrawable(info.loadIcon(packageManager))
+    scaleType = ImageView.ScaleType.FIT_CENTER
+    setPadding(dp(7), dp(7), dp(7), dp(7))
 
-        background = GradientDrawable().apply {
-            setColor(Color.rgb(42, 49, 65))
-            cornerRadius = dp(19).toFloat()
-        }
+    background = GradientDrawable().apply {
+        shape = GradientDrawable.OVAL
+        setColor(Color.rgb(42, 49, 65))
     }
+
+    clipToOutline = true
+}
+
 
     tile.addView(
         icon,
