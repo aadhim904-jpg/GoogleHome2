@@ -13,7 +13,7 @@
     <application
         android:allowBackup="true"
         android:label="GoogleHome2"
-        android:theme="@android:style/Theme.Material.NoActionBar"
+        android:theme="@android:style/Theme.Material.NoActionBar">
 
         <activity
             android:name=".HomeActivity"
@@ -29,3 +29,4 @@
 
     </application>
 </manifest>
+
