@@ -262,9 +262,6 @@ class HomeActivity : Activity() {
             isFocusableInTouchMode = true
         }
 
-        val heading = makeText("GoogleHome2 Google TV", 19f)
-        heading.typeface = Typeface.DEFAULT_BOLD
-        panel.addView(heading)
 
         val subHeading = makeText(title, 23f)
         subHeading.typeface = Typeface.DEFAULT_BOLD
