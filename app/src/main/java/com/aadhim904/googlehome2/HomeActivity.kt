@@ -131,6 +131,27 @@ private val clockUpdater = object : Runnable {
             brand,
             LinearLayout.LayoutParams(0, dp(55), 1f)
         )
+        
+        private val clockHandler = Handler(Looper.getMainLooper())
+
+        private lateinit var clockTime: TextView
+        private lateinit var clockDate: TextView
+
+        private val clockUpdater = object : Runnable {
+        override fun run() {
+            if (::clockTime.isInitialized && ::clockDate.isInitialized) {
+                val now = Date()
+
+            clockTime.text =
+                SimpleDateFormat("h:mm a", Locale.getDefault()).format(now)
+
+            clockDate.text =
+                SimpleDateFormat("EEE, dd MMM", Locale.ENGLISH).format(now)
+        }
+
+        clockHandler.postDelayed(this, 30000)
+    }
+}
 
         header.addView(
             makeButton("⚙ Settings") { showPanel(leftPanel) }
