@@ -64,7 +64,10 @@ private val clockUpdater = object : Runnable {
             clockDate.text =
                 SimpleDateFormat("EEE, dd MMM", Locale.ENGLISH).format(now)
         }
-
+        override fun onDestroy() {
+    clockHandler.removeCallbacks(clockUpdater)
+    super.onDestroy()
+        }
         clockHandler.postDelayed(this, 30000)
     }
 }
@@ -148,6 +151,7 @@ private val clockUpdater = object : Runnable {
             clockDate.text =
                 SimpleDateFormat("EEE, dd MMM", Locale.ENGLISH).format(now)
         }
+         clockHandler.post(clockUpdater)   
 
         clockHandler.postDelayed(this, 30000)
     }
