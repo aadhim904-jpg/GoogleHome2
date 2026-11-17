@@ -14,97 +14,137 @@ import android.widget.*
 
 class HomeActivity : Activity() {
 
-    private fun dp(value: Int): Int =
-        (value * resources.displayMetrics.density).toInt()
+    private fun dp(v: Int): Int =
+        (v * resources.displayMetrics.density).toInt()
 
-    private fun panel(color: Int): GradientDrawable {
-        return GradientDrawable().apply {
-            setColor(color)
-            cornerRadius = dp(18).toFloat()
+    private fun glass(focused: Boolean = false): GradientDrawable {
+        return GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            intArrayOf(
+                if (focused) Color.argb(105, 120, 170, 255)
+                else Color.argb(65, 255, 255, 255),
+                if (focused) Color.argb(65, 80, 110, 190)
+                else Color.argb(22, 180, 205, 255),
+                Color.argb(35, 255, 255, 255)
+            )
+        ).apply {
+            cornerRadius = dp(22).toFloat()
+            setStroke(
+                dp(1),
+                if (focused) Color.argb(220, 220, 235, 255)
+                else Color.argb(90, 255, 255, 255)
+            )
         }
+    }
+
+    private fun label(
+        value: String,
+        size: Float,
+        color: Int,
+        bold: Boolean = false
+    ) = TextView(this).apply {
+        text = value
+        textSize = size
+        setTextColor(color)
+        if (bold) setTypeface(null, Typeface.BOLD)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        window.statusBarColor = Color.rgb(10, 13, 22)
-        window.navigationBarColor = Color.rgb(10, 13, 22)
+        window.statusBarColor = Color.rgb(12, 15, 29)
+        window.navigationBarColor = Color.rgb(12, 15, 29)
 
         val page = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(32), dp(24), dp(32), dp(24))
-            setBackgroundColor(Color.rgb(10, 13, 22))
+            setPadding(dp(42), dp(25), dp(42), dp(30))
+            background = GradientDrawable(
+                GradientDrawable.Orientation.TL_BR,
+                intArrayOf(
+                    Color.rgb(13, 19, 39),
+                    Color.rgb(24, 24, 48),
+                    Color.rgb(9, 13, 27)
+                )
+            )
         }
 
+        // TOP BAR
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
         }
 
-        val logo = TextView(this).apply {
-            text = "GoogleHome2"
-            textSize = 28f
-            setTypeface(null, Typeface.BOLD)
-            setTextColor(Color.WHITE)
-        }
+        val brand = label("GoogleHome2", 27f, Color.WHITE, true)
 
-        val headerInfo = TextView(this).apply {
-            text = "ANDROID TV"
-            textSize = 13f
-            setTextColor(Color.LTGRAY)
-            gravity = Gravity.CENTER_VERTICAL
+        val topInfo = label(
+            "HOME     ⚙",
+            15f,
+            Color.LTGRAY,
+            true
+        ).apply {
+            gravity = Gravity.CENTER
+            background = glass()
+            setPadding(dp(22), dp(12), dp(22), dp(12))
         }
 
         header.addView(
-            logo,
-            LinearLayout.LayoutParams(0, dp(55), 1f)
+            brand,
+            LinearLayout.LayoutParams(0, dp(58), 1f)
         )
-        header.addView(headerInfo)
+        header.addView(topInfo)
         page.addView(header)
 
+        // HERO GLASS PANEL
         val hero = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(28), dp(22), dp(28), dp(22))
-            background = panel(Color.rgb(30, 39, 62))
+            setPadding(dp(32), dp(24), dp(32), dp(24))
+            background = glass()
+            elevation = dp(8).toFloat()
         }
 
-        val heroTitle = TextView(this).apply {
-            text = "Welcome to your entertainment"
-            textSize = 27f
-            setTypeface(null, Typeface.BOLD)
-            setTextColor(Color.WHITE)
-        }
+        val tag = label(
+            "YOUR ENTERTAINMENT SPACE",
+            12f,
+            Color.rgb(170, 200, 255),
+            true
+        )
 
-        val heroSubtitle = TextView(this).apply {
-            text = "Your apps. Your screen. Your experience."
-            textSize = 15f
-            setTextColor(Color.LTGRAY)
-        }
+        val heroTitle = label(
+            "Everything you love.",
+            34f,
+            Color.WHITE,
+            true
+        )
 
+        val heroSubtitle = label(
+            "All your entertainment in one place",
+            16f,
+            Color.LTGRAY
+        )
+
+        hero.addView(tag)
         hero.addView(heroTitle)
         hero.addView(heroSubtitle)
 
-        val heroParams = LinearLayout.LayoutParams(
-            -1, dp(155)
-        )
-        heroParams.topMargin = dp(25)
+        val heroParams = LinearLayout.LayoutParams(-1, dp(190))
+        heroParams.topMargin = dp(28)
         page.addView(hero, heroParams)
 
-        val appsTitle = TextView(this).apply {
-            text = "Your apps"
-            textSize = 23f
-            setTypeface(null, Typeface.BOLD)
-            setTextColor(Color.WHITE)
-        }
-
-        val titleParams = LinearLayout.LayoutParams(
-            -1, -2
+        // APPS TITLE
+        val appsTitle = label(
+            "Your Apps",
+            24f,
+            Color.WHITE,
+            true
         )
-        titleParams.topMargin = dp(30)
-        titleParams.bottomMargin = dp(15)
+
+        val titleParams = LinearLayout.LayoutParams(-1, -2)
+        titleParams.topMargin = dp(32)
+        titleParams.bottomMargin = dp(18)
         page.addView(appsTitle, titleParams)
 
+        // INSTALLED APPS
         val appScroll = HorizontalScrollView(this).apply {
             isHorizontalScrollBarEnabled = false
             isFocusable = false
@@ -117,22 +157,21 @@ class HomeActivity : Activity() {
         val apps = getInstalledApps()
 
         if (apps.isEmpty()) {
-            val empty = TextView(this).apply {
-                text = "No apps found"
-                textSize = 16f
-                setTextColor(Color.LTGRAY)
-            }
-            appRow.addView(empty)
+            appRow.addView(
+                label("No apps found", 16f, Color.LTGRAY)
+            )
         }
 
         for (info in apps) {
+
             val card = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
                 gravity = Gravity.CENTER
-                setPadding(dp(12), dp(15), dp(12), dp(12))
-                background = panel(Color.rgb(35, 40, 55))
+                setPadding(dp(12), dp(14), dp(12), dp(12))
+                background = glass()
                 isFocusable = true
                 isClickable = true
+                elevation = dp(5).toFloat()
             }
 
             val icon = ImageView(this).apply {
@@ -142,68 +181,66 @@ class HomeActivity : Activity() {
 
             card.addView(
                 icon,
-                LinearLayout.LayoutParams(dp(68), dp(68))
+                LinearLayout.LayoutParams(dp(66), dp(66))
             )
 
-            val name = TextView(this).apply {
-                text = info.loadLabel(packageManager).toString()
-                textSize = 13f
-                setTextColor(Color.WHITE)
+            val appName = label(
+                info.loadLabel(packageManager).toString(),
+                13f,
+                Color.WHITE,
+                true
+            ).apply {
                 gravity = Gravity.CENTER
                 maxLines = 2
             }
 
             val nameParams = LinearLayout.LayoutParams(
-                dp(105), dp(42)
+                dp(112), dp(42)
             )
-            nameParams.topMargin = dp(8)
-            card.addView(name, nameParams)
+            nameParams.topMargin = dp(10)
+            card.addView(appName, nameParams)
 
             card.setOnFocusChangeListener { view, focused ->
-                view.background = panel(
-                    if (focused) Color.rgb(65, 91, 145)
-                    else Color.rgb(35, 40, 55)
-                )
-                view.scaleX = if (focused) 1.06f else 1f
-                view.scaleY = if (focused) 1.06f else 1f
+                view.background = glass(focused)
+                view.scaleX = if (focused) 1.07f else 1f
+                view.scaleY = if (focused) 1.07f else 1f
             }
 
             card.setOnClickListener {
                 val pkg = info.activityInfo.packageName
-                val launch = packageManager
-                    .getLeanbackLaunchIntentForPackage(pkg)
-                    ?: packageManager.getLaunchIntentForPackage(pkg)
+                val launch =
+                    packageManager.getLeanbackLaunchIntentForPackage(pkg)
+                        ?: packageManager.getLaunchIntentForPackage(pkg)
 
                 if (launch != null) startActivity(launch)
             }
 
             val cardParams = LinearLayout.LayoutParams(
-                dp(130), dp(150)
+                dp(145), dp(155)
             )
-            cardParams.marginEnd = dp(15)
+            cardParams.marginEnd = dp(18)
             appRow.addView(card, cardParams)
         }
 
         appScroll.addView(appRow)
-
         page.addView(
             appScroll,
-            LinearLayout.LayoutParams(-1, dp(165))
+            LinearLayout.LayoutParams(-1, dp(170))
         )
 
-        val footer = TextView(this).apply {
-            text = "Select an app to open"
-            textSize = 13f
-            setTextColor(Color.GRAY)
-        }
+        val footer = label(
+            "Select an app to continue",
+            13f,
+            Color.GRAY
+        )
 
         val footerParams = LinearLayout.LayoutParams(-1, -2)
-        footerParams.topMargin = dp(20)
+        footerParams.topMargin = dp(25)
         page.addView(footer, footerParams)
 
         val screen = ScrollView(this).apply {
-    setFillViewport(true)
-    addView(page)
+            setFillViewport(true)
+            addView(page)
         }
 
         setContentView(screen)
@@ -237,4 +274,5 @@ class HomeActivity : Activity() {
         }
     }
 }
+
 
