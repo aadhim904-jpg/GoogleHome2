@@ -1,0 +1,20 @@
+
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.aadhim904.googlehome2'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.aadhim904.googlehome2'
+        minSdk 23
+        targetSdk 28
+        versionCode 1
+        versionName '1.0'
+    }
+}
+
+dependencies {
+}
