@@ -20,6 +20,13 @@ import android.os.Looper
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import android.animation.ValueAnimator
+import android.graphics.Canvas
+import android.graphics.Matrix
+import android.graphics.Paint
+import android.graphics.RectF
+import android.graphics.SweepGradient
+import android.view.animation.LinearInterpolator
 
 class HomeActivity : Activity() {
 
