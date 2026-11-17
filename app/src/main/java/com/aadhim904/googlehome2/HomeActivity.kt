@@ -98,7 +98,7 @@ class HomeActivity : Activity() {
             gravity = Gravity.CENTER_VERTICAL
         }
 
-        val brand = makeText("GoogleHome2 Google TV", 23f)
+        val brand = makeText("Google TV", 23f)
         brand.typeface = Typeface.DEFAULT_BOLD
 
         header.addView(
@@ -117,7 +117,7 @@ class HomeActivity : Activity() {
         page.addView(header)
 
         hero = makeText(
-            "Welcome to GoogleHome2 Google TV",
+            "Welcome to Google TV",
             24f
         ).apply {
             setPadding(dp(22), dp(25), dp(22), dp(25))
