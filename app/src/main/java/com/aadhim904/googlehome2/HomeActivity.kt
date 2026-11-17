@@ -785,10 +785,9 @@ private inner class BootAnimationView : View(this@HomeActivity) {
         super.onDetachedFromWindow()
     }
 }
-      
-        }
-    }
 }
+    
+
 
 
 
