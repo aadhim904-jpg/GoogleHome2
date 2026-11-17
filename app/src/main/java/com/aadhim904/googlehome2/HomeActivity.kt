@@ -42,6 +42,15 @@ class HomeActivity : Activity() {
     private val panelWidth = 290
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
+root = FrameLayout(this)
+root.setBackgroundColor(Color.rgb(12, 16, 28))
+setContentView(root)
+
+buildHome()
+buildPanels()
+showBootAnimation()
+        
         super.onCreate(savedInstanceState)
 
         window.statusBarColor = Color.rgb(12, 16, 28)
