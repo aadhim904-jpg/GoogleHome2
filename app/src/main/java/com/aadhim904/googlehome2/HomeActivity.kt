@@ -306,37 +306,7 @@ group.forEach { info ->
         rightPanel.visibility = View.GONE
     }
 
-    private fun createPanel(
-        title: String,
-        isSettings: Boolean
-    ): LinearLayout {
-
-        val panel = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(18), dp(25), dp(18), dp(20))
-            background = cardBackground(true)
-            isFocusableInTouchMode = true
-        }
-
-
-        val subHeading = makeText(title, 23f)
-        subHeading.typeface = Typeface.DEFAULT_BOLD
-
-        val headingParams = LinearLayout.LayoutParams(-1, dp(60))
-        headingParams.topMargin = dp(12)
-        panel.addView(subHeading, headingParams)
-
-        panel.addView(
-            makeButton("✕ Close") {
-                hidePanel(panel)
-            }
-        )
-
-        val space = Space(this)
-        panel.addView(
-            space,
-            LinearLayout.LayoutParams(1, dp(18))
-        )
+    
 
         if (isSettings) {
             val glassSwitch = Switch(this).apply {
@@ -371,12 +341,154 @@ group.forEach { info ->
                 }
             )
 
-        } else {
-            panel.addView(
-                makeButton("HDMI / AV / TV Inputs") {
-                    openInputSettings()
-                }
-            )
+        
+private fun createPanel(
+    title: String,
+    isSettings: Boolean
+): LinearLayout {
+
+    val panel = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        setPadding(dp(18), dp(25), dp(18), dp(20))
+        background = cardBackground(true)
+        isFocusableInTouchMode = true
+    }
+
+    val heading = makeText(title, 24f)
+    heading.typeface = Typeface.DEFAULT_BOLD
+    panel.addView(heading, LinearLayout.LayoutParams(-1, dp(55)))
+
+    panel.addView(
+        makeButton("✕ Close") {
+            hidePanel(panel)
+        }
+    )
+
+    val scroll = ScrollView(this)
+    val content = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+    }
+
+    if (isSettings) {
+
+        addSection(content, "Display & Picture")
+
+        content.addView(
+            makeButton("Hi-Res Mode  ·  Picture Settings") {
+                openSystemSettings(Settings.ACTION_DISPLAY_SETTINGS)
+            }
+        )
+
+        addSection(content, "Sound")
+
+        content.addView(
+            makeButton("Dolby Digital+ Profile  ·  Sound Settings") {
+                openSystemSettings(Settings.ACTION_SOUND_SETTINGS)
+            }
+        )
+
+        addSection(content, "Hardware")
+
+        content.addView(
+            makeText(hardwareInfoText(), 14f).apply {
+                setPadding(dp(8), dp(12), dp(8), dp(18))
+            }
+        )
+
+        content.addView(
+            makeButton("Wi-Fi Settings") {
+                openSystemSettings(Settings.ACTION_WIFI_SETTINGS)
+            }
+        )
+
+        content.addView(
+            makeButton("Bluetooth Settings") {
+                openSystemSettings(Settings.ACTION_BLUETOOTH_SETTINGS)
+            }
+        )
+
+        content.addView(
+            makeButton("Remote & HDMI Input") {
+                openInputSettings()
+            }
+        )
+
+    } else {
+
+        content.addView(
+            makeButton("HDMI / AV / TV Inputs") {
+                openInputSettings()
+            }
+        )
+
+        content.addView(
+            makeText(
+                "Google TV Source",
+                16f
+            ).apply {
+                setPadding(dp(8), dp(18), dp(8), dp(10))
+            }
+        )
+    }
+
+    scroll.addView(content)
+
+    panel.addView(
+        scroll,
+        LinearLayout.LayoutParams(-1, 0, 1f)
+    )
+
+    return panel
+}
+
+private fun addSection(
+    parent: LinearLayout,
+    name: String
+) {
+    val heading = makeText(name, 19f)
+    heading.typeface = Typeface.DEFAULT_BOLD
+
+    val params = LinearLayout.LayoutParams(-1, dp(55))
+    params.topMargin = dp(12)
+
+    parent.addView(heading, params)
+}
+
+private fun openSystemSettings(action: String) {
+    try {
+        startActivity(Intent(action))
+    } catch (e: Exception) {
+        startActivity(Intent(Settings.ACTION_SETTINGS))
+    }
+}
+
+private fun hardwareInfoText(): String {
+    val manager =
+        getSystemService(ACTIVITY_SERVICE) as android.app.ActivityManager
+
+    val memory = android.app.ActivityManager.MemoryInfo()
+    manager.getMemoryInfo(memory)
+
+    val storage = android.os.StatFs(
+        android.os.Environment.getDataDirectory().path
+    )
+
+    return """
+        Device: ${android.os.Build.MODEL}
+        Android: ${android.os.Build.VERSION.RELEASE}
+        Hardware: ${android.os.Build.HARDWARE}
+        Total RAM: ${formatBytes(memory.totalMem)}
+        Available RAM: ${formatBytes(memory.availMem)}
+        Total Storage: ${formatBytes(storage.totalBytes)}
+        Free Storage: ${formatBytes(storage.availableBytes)}
+    """.trimIndent()
+}
+
+private fun formatBytes(bytes: Long): String {
+    val gb = bytes / (1024.0 * 1024.0 * 1024.0)
+    return String.format("%.1f GB", gb)
+}
+  
 
             val info = makeText(
                 "Input switching is controlled by your TV system. Use the remote SOURCE / INPUT button if the TV does not provide an input settings screen.",
