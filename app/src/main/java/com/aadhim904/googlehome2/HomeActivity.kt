@@ -202,8 +202,8 @@ class HomeActivity : Activity() {
         page.addView(footer, footerParams)
 
         val screen = ScrollView(this).apply {
-            fillViewport = true
-            addView(page)
+    setFillViewport(true)
+    addView(page)
         }
 
         setContentView(screen)
