@@ -154,19 +154,75 @@ class HomeActivity : Activity() {
                 orientation = LinearLayout.HORIZONTAL
             }
 
-            group.forEach { info ->
-                val appName = info.loadLabel(packageManager).toString()
+            
+group.forEach { info ->
 
-                val item = makeButton(appName) {
-                    openApp(info)
+    val tile = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        gravity = Gravity.CENTER
+        isFocusable = true
+        isClickable = true
+        setPadding(dp(5), dp(5), dp(5), dp(5))
+
+        background = GradientDrawable().apply {
+            setColor(Color.TRANSPARENT)
+            cornerRadius = dp(18).toFloat()
+        }
+
+        setOnClickListener {
+            openApp(info)
+        }
+
+        setOnFocusChangeListener { view, focused ->
+            view.background = if (focused) {
+                cardBackground(true)
+            } else {
+                GradientDrawable().apply {
+                    setColor(Color.TRANSPARENT)
+                    cornerRadius = dp(18).toFloat()
                 }
-
-                val params = LinearLayout.LayoutParams(
-                    0, dp(75), 1f
-                )
-                params.setMargins(dp(5), dp(5), dp(5), dp(5))
-                row.addView(item, params)
             }
+        }
+    }
+
+    val icon = ImageView(this).apply {
+        setImageDrawable(info.loadIcon(packageManager))
+        scaleType = ImageView.ScaleType.FIT_CENTER
+        setPadding(dp(10), dp(10), dp(10), dp(10))
+
+        background = GradientDrawable().apply {
+            setColor(Color.rgb(42, 49, 65))
+            cornerRadius = dp(19).toFloat()
+        }
+    }
+
+    tile.addView(
+        icon,
+        LinearLayout.LayoutParams(dp(68), dp(68))
+    )
+
+    val label = makeText(
+        info.loadLabel(packageManager).toString(),
+        12f
+    ).apply {
+        gravity = Gravity.CENTER
+        maxLines = 1
+        ellipsize = android.text.TextUtils.TruncateAt.END
+    }
+
+    tile.addView(
+        label,
+        LinearLayout.LayoutParams(-1, dp(30))
+    )
+
+    val params = LinearLayout.LayoutParams(
+        0, dp(112), 1f
+    )
+
+    params.setMargins(dp(5), dp(5), dp(5), dp(5))
+    row.addView(tile, params)
+}
+
 
             appList.addView(row)
         }
