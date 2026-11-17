@@ -1,4 +1,4 @@
-
+    
 package com.aadhim904.googlehome2
 
 import android.app.Activity
@@ -6,27 +6,27 @@ import android.content.Intent
 import android.content.pm.ResolveInfo
 import android.graphics.Color
 import android.graphics.Typeface
-import android.graphics.drawable.GradientDrawable
-import android.os.Bundle
-import android.provider.Settings
-import android.view.Gravity
-import android.view.KeyEvent
-import android.view.View
-import android.view.animation.DecelerateInterpolator
-import android.widget.*
-import android.widget.FrameLayout.LayoutParams
-import android.os.Handler
-import android.os.Looper
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import android.animation.ValueAnimator
 import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.SweepGradient
+import android.graphics.drawable.GradientDrawable
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.StatFs
+import android.provider.Settings
+import android.view.Gravity
+import android.view.KeyEvent
+import android.view.View
+import android.view.animation.DecelerateInterpolator
 import android.view.animation.LinearInterpolator
+import android.widget.*
+import android.animation.ValueAnimator
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class HomeActivity : Activity() {
 
@@ -35,22 +35,34 @@ class HomeActivity : Activity() {
     private lateinit var rightPanel: LinearLayout
     private lateinit var hero: TextView
 
+    private lateinit var clockTime: TextView
+    private lateinit var clockDate: TextView
+
     private val prefs by lazy {
         getSharedPreferences("GoogleHome2Prefs", MODE_PRIVATE)
     }
 
     private val panelWidth = 290
 
+    private val clockHandler = Handler(Looper.getMainLooper())
+
+    private val clockUpdater = object : Runnable {
+        override fun run() {
+            if (::clockTime.isInitialized && ::clockDate.isInitialized) {
+                val now = Date()
+
+                clockTime.text =
+                    SimpleDateFormat("h:mm a", Locale.getDefault()).format(now)
+
+                clockDate.text =
+                    SimpleDateFormat("EEE, dd MMM", Locale.ENGLISH).format(now)
+            }
+
+            clockHandler.postDelayed(this, 30000L)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
-
-root = FrameLayout(this)
-root.setBackgroundColor(Color.rgb(12, 16, 28))
-setContentView(root)
-
-buildHome()
-buildPanels()
-showBootAnimation()
-        
         super.onCreate(savedInstanceState)
 
         window.statusBarColor = Color.rgb(12, 16, 28)
@@ -62,32 +74,16 @@ showBootAnimation()
 
         buildHome()
         buildPanels()
+        showBootAnimation()
+
+        clockHandler.post(clockUpdater)
     }
-     
-private val clockHandler = Handler(Looper.getMainLooper())
 
-private lateinit var clockTime: TextView
-private lateinit var clockDate: TextView
-
-private val clockUpdater = object : Runnable {
-    override fun run() {
-        if (::clockTime.isInitialized && ::clockDate.isInitialized) {
-            val now = Date()
-
-            clockTime.text =
-                SimpleDateFormat("h:mm a", Locale.getDefault()).format(now)
-
-            clockDate.text =
-                SimpleDateFormat("EEE, dd MMM", Locale.ENGLISH).format(now)
-        }
-        override fun onDestroy() {
-    clockHandler.removeCallbacks(clockUpdater)
-    super.onDestroy()
-        }
-        clockHandler.postDelayed(this, 30000)
+    override fun onDestroy() {
+        clockHandler.removeCallbacks(clockUpdater)
+        super.onDestroy()
     }
-}
- 
+
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density).toInt()
 
@@ -133,6 +129,7 @@ private val clockUpdater = object : Runnable {
     }
 
     private fun buildHome() {
+
         val page = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(28), dp(20), dp(28), dp(20))
@@ -150,35 +147,39 @@ private val clockUpdater = object : Runnable {
             brand,
             LinearLayout.LayoutParams(0, dp(55), 1f)
         )
-        
-        private val clockHandler = Handler(Looper.getMainLooper())
 
-        private lateinit var clockTime: TextView
-        private lateinit var clockDate: TextView
-
-        private val clockUpdater = object : Runnable {
-        override fun run() {
-            if (::clockTime.isInitialized && ::clockDate.isInitialized) {
-                val now = Date()
-
-            clockTime.text =
-                SimpleDateFormat("h:mm a", Locale.getDefault()).format(now)
-
-            clockDate.text =
-                SimpleDateFormat("EEE, dd MMM", Locale.ENGLISH).format(now)
+        val clockBox = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
         }
-         clockHandler.post(clockUpdater)   
 
-        clockHandler.postDelayed(this, 30000)
-    }
-}
+        clockTime = makeText("12:00 PM", 16f).apply {
+            gravity = Gravity.CENTER
+            typeface = Typeface.DEFAULT_BOLD
+        }
+
+        clockDate = makeText("Mon, 01 Jan", 11f).apply {
+            gravity = Gravity.CENTER
+        }
+
+        clockBox.addView(clockTime)
+        clockBox.addView(clockDate)
 
         header.addView(
-            makeButton("⚙ Settings") { showPanel(leftPanel) }
+            clockBox,
+            LinearLayout.LayoutParams(-2, dp(55))
         )
 
         header.addView(
-            makeButton("Source") { showPanel(rightPanel) }
+            makeButton("⚙ Settings") {
+                showPanel(leftPanel)
+            }
+        )
+
+        header.addView(
+            makeButton("Source") {
+                showPanel(rightPanel)
+            }
         )
 
         page.addView(header)
@@ -197,19 +198,20 @@ private val clockUpdater = object : Runnable {
             LinearLayout.LayoutParams.MATCH_PARENT,
             dp(130)
         )
+
         heroParams.topMargin = dp(22)
         page.addView(hero, heroParams)
 
         val appTitle = makeText("Your Apps", 21f)
         appTitle.typeface = Typeface.DEFAULT_BOLD
 
-        val titleParams = LinearLayout.LayoutParams(
-            -1, dp(55)
-        )
+        val titleParams = LinearLayout.LayoutParams(-1, dp(55))
         titleParams.topMargin = dp(15)
+
         page.addView(appTitle, titleParams)
 
         val scroll = ScrollView(this)
+
         val appList = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
         }
@@ -217,88 +219,86 @@ private val clockUpdater = object : Runnable {
         val apps = getInstalledApps()
 
         apps.chunked(3).forEach { group ->
+
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
             }
 
-            
-group.forEach { info ->
+            group.forEach { info ->
 
-    val tile = LinearLayout(this).apply {
-        orientation = LinearLayout.VERTICAL
-        gravity = Gravity.CENTER
-        isFocusable = true
-        isClickable = true
-        setPadding(dp(5), dp(5), dp(5), dp(5))
+                val tile = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    gravity = Gravity.CENTER
+                    isFocusable = true
+                    isClickable = true
+                    setPadding(dp(5), dp(5), dp(5), dp(5))
 
-        background = GradientDrawable().apply {
-            setColor(Color.TRANSPARENT)
-            cornerRadius = dp(18).toFloat()
-        }
+                    background = GradientDrawable().apply {
+                        setColor(Color.TRANSPARENT)
+                        cornerRadius = dp(18).toFloat()
+                    }
 
-        setOnClickListener {
-            openApp(info)
-        }
+                    setOnClickListener {
+                        openApp(info)
+                    }
 
-        setOnFocusChangeListener { view, focused ->
-            view.background = if (focused) {
-                cardBackground(true)
-            } else {
-                GradientDrawable().apply {
-                    setColor(Color.TRANSPARENT)
-                    cornerRadius = dp(18).toFloat()
+                    setOnFocusChangeListener { view, focused ->
+                        view.background = if (focused) {
+                            cardBackground(true)
+                        } else {
+                            GradientDrawable().apply {
+                                setColor(Color.TRANSPARENT)
+                                cornerRadius = dp(18).toFloat()
+                            }
+                        }
+                    }
                 }
+
+                val icon = ImageView(this).apply {
+                    setImageDrawable(info.loadIcon(packageManager))
+                    scaleType = ImageView.ScaleType.FIT_CENTER
+                    setPadding(dp(7), dp(7), dp(7), dp(7))
+
+                    background = GradientDrawable().apply {
+                        shape = GradientDrawable.OVAL
+                        setColor(Color.rgb(42, 49, 65))
+                    }
+
+                    clipToOutline = true
+                }
+
+                tile.addView(
+                    icon,
+                    LinearLayout.LayoutParams(dp(68), dp(68))
+                )
+
+                val label = makeText(
+                    info.loadLabel(packageManager).toString(),
+                    12f
+                ).apply {
+                    gravity = Gravity.CENTER
+                    maxLines = 1
+                    ellipsize = android.text.TextUtils.TruncateAt.END
+                }
+
+                tile.addView(
+                    label,
+                    LinearLayout.LayoutParams(-1, dp(30))
+                )
+
+                val params = LinearLayout.LayoutParams(
+                    0, dp(112), 1f
+                )
+
+                params.setMargins(dp(5), dp(5), dp(5), dp(5))
+                row.addView(tile, params)
             }
-        }
-    }
-
-    
-val icon = ImageView(this).apply {
-    setImageDrawable(info.loadIcon(packageManager))
-    scaleType = ImageView.ScaleType.FIT_CENTER
-    setPadding(dp(7), dp(7), dp(7), dp(7))
-
-    background = GradientDrawable().apply {
-        shape = GradientDrawable.OVAL
-        setColor(Color.rgb(42, 49, 65))
-    }
-
-    clipToOutline = true
-}
-
-
-    tile.addView(
-        icon,
-        LinearLayout.LayoutParams(dp(68), dp(68))
-    )
-
-    val label = makeText(
-        info.loadLabel(packageManager).toString(),
-        12f
-    ).apply {
-        gravity = Gravity.CENTER
-        maxLines = 1
-        ellipsize = android.text.TextUtils.TruncateAt.END
-    }
-
-    tile.addView(
-        label,
-        LinearLayout.LayoutParams(-1, dp(30))
-    )
-
-    val params = LinearLayout.LayoutParams(
-        0, dp(112), 1f
-    )
-
-    params.setMargins(dp(5), dp(5), dp(5), dp(5))
-    row.addView(tile, params)
-}
-
 
             appList.addView(row)
         }
 
         scroll.addView(appList)
+
         page.addView(
             scroll,
             LinearLayout.LayoutParams(-1, 0, 1f)
@@ -306,11 +306,12 @@ val icon = ImageView(this).apply {
 
         root.addView(
             page,
-            LayoutParams(-1, -1)
+            FrameLayout.LayoutParams(-1, -1)
         )
     }
 
     private fun getInstalledApps(): List<ResolveInfo> {
+
         val result = LinkedHashMap<String, ResolveInfo>()
 
         val categories = listOf(
@@ -319,11 +320,13 @@ val icon = ImageView(this).apply {
         )
 
         categories.forEach { category ->
+
             val intent = Intent(Intent.ACTION_MAIN)
             intent.addCategory(category)
 
             packageManager.queryIntentActivities(intent, 0)
                 .forEach { info ->
+
                     val packageName = info.activityInfo.packageName
 
                     if (packageName != this.packageName) {
@@ -340,28 +343,36 @@ val icon = ImageView(this).apply {
     private fun openApp(info: ResolveInfo) {
         try {
             val intent = Intent(Intent.ACTION_MAIN)
+
             intent.setClassName(
                 info.activityInfo.packageName,
                 info.activityInfo.name
             )
+
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             startActivity(intent)
+
         } catch (e: Exception) {
-            Toast.makeText(this, "App cannot be opened", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                "App cannot be opened",
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
     private fun buildPanels() {
+
         leftPanel = createPanel("Settings", true)
         rightPanel = createPanel("Source", false)
 
-        val paramsLeft = LayoutParams(
+        val paramsLeft = FrameLayout.LayoutParams(
             dp(panelWidth),
             -1,
             Gravity.LEFT
         )
 
-        val paramsRight = LayoutParams(
+        val paramsRight = FrameLayout.LayoutParams(
             dp(panelWidth),
             -1,
             Gravity.RIGHT
@@ -377,9 +388,40 @@ val icon = ImageView(this).apply {
         rightPanel.visibility = View.GONE
     }
 
-    
+    private fun createPanel(
+        title: String,
+        isSettings: Boolean
+    ): LinearLayout {
+
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(25), dp(18), dp(20))
+            background = cardBackground(true)
+            isFocusableInTouchMode = true
+        }
+
+        val heading = makeText(title, 24f)
+        heading.typeface = Typeface.DEFAULT_BOLD
+
+        panel.addView(
+            heading,
+            LinearLayout.LayoutParams(-1, dp(55))
+        )
+
+        panel.addView(
+            makeButton("✕ Close") {
+                hidePanel(panel)
+            }
+        )
+
+        val scroll = ScrollView(this)
+
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
 
         if (isSettings) {
+
             val glassSwitch = Switch(this).apply {
                 text = "Liquid Glass"
                 textSize = 17f
@@ -387,6 +429,7 @@ val icon = ImageView(this).apply {
                 isChecked = prefs.getBoolean("glass_enabled", true)
 
                 setOnCheckedChangeListener { _, checked ->
+
                     prefs.edit()
                         .putBoolean("glass_enabled", checked)
                         .apply()
@@ -395,171 +438,72 @@ val icon = ImageView(this).apply {
                 }
             }
 
-            panel.addView(
+            content.addView(
                 glassSwitch,
                 LinearLayout.LayoutParams(-1, dp(65))
             )
 
-            panel.addView(
+            content.addView(
                 makeButton("Default Home Settings") {
-                    try {
-                        startActivity(
-                            Intent(Settings.ACTION_HOME_SETTINGS)
-                        )
-                    } catch (e: Exception) {
-                        startActivity(Intent(Settings.ACTION_SETTINGS))
-                    }
+                    openSystemSettings("android.settings.HOME_SETTINGS")
                 }
             )
 
-        
-private fun createPanel(
-    title: String,
-    isSettings: Boolean
-): LinearLayout {
+            addSection(content, "Display & Picture")
 
-    val panel = LinearLayout(this).apply {
-        orientation = LinearLayout.VERTICAL
-        setPadding(dp(18), dp(25), dp(18), dp(20))
-        background = cardBackground(true)
-        isFocusableInTouchMode = true
-    }
+            content.addView(
+                makeButton("Hi-Res Mode  ·  Picture Settings") {
+                    openSystemSettings(Settings.ACTION_DISPLAY_SETTINGS)
+                }
+            )
 
-    val heading = makeText(title, 24f)
-    heading.typeface = Typeface.DEFAULT_BOLD
-    panel.addView(heading, LinearLayout.LayoutParams(-1, dp(55)))
+            addSection(content, "Sound")
 
-    panel.addView(
-        makeButton("✕ Close") {
-            hidePanel(panel)
-        }
-    )
+            content.addView(
+                makeButton("Dolby Digital+ Profile  ·  Sound Settings") {
+                    openSystemSettings(Settings.ACTION_SOUND_SETTINGS)
+                }
+            )
 
-    val scroll = ScrollView(this)
-    val content = LinearLayout(this).apply {
-        orientation = LinearLayout.VERTICAL
-    }
+            addSection(content, "Hardware")
 
-    if (isSettings) {
+            content.addView(
+                makeText(hardwareInfoText(), 14f).apply {
+                    setPadding(dp(8), dp(12), dp(8), dp(18))
+                }
+            )
 
-        addSection(content, "Display & Picture")
+            content.addView(
+                makeButton("Wi-Fi Settings") {
+                    openSystemSettings(Settings.ACTION_WIFI_SETTINGS)
+                }
+            )
 
-        content.addView(
-            makeButton("Hi-Res Mode  ·  Picture Settings") {
-                openSystemSettings(Settings.ACTION_DISPLAY_SETTINGS)
-            }
-        )
+            content.addView(
+                makeButton("Bluetooth Settings") {
+                    openSystemSettings(Settings.ACTION_BLUETOOTH_SETTINGS)
+                }
+            )
 
-        addSection(content, "Sound")
+            content.addView(
+                makeButton("Remote & HDMI Input") {
+                    openInputSettings()
+                }
+            )
 
-        content.addView(
-            makeButton("Dolby Digital+ Profile  ·  Sound Settings") {
-                openSystemSettings(Settings.ACTION_SOUND_SETTINGS)
-            }
-        )
+        } else {
 
-        addSection(content, "Hardware")
+            content.addView(
+                makeButton("HDMI / AV / TV Inputs") {
+                    openInputSettings()
+                }
+            )
 
-        content.addView(
-            makeText(hardwareInfoText(), 14f).apply {
-                setPadding(dp(8), dp(12), dp(8), dp(18))
-            }
-        )
-
-        content.addView(
-            makeButton("Wi-Fi Settings") {
-                openSystemSettings(Settings.ACTION_WIFI_SETTINGS)
-            }
-        )
-
-        content.addView(
-            makeButton("Bluetooth Settings") {
-                openSystemSettings(Settings.ACTION_BLUETOOTH_SETTINGS)
-            }
-        )
-
-        content.addView(
-            makeButton("Remote & HDMI Input") {
-                openInputSettings()
-            }
-        )
-
-    } else {
-
-        content.addView(
-            makeButton("HDMI / AV / TV Inputs") {
-                openInputSettings()
-            }
-        )
-
-        content.addView(
-            makeText(
-                "Google TV Source",
-                16f
-            ).apply {
-                setPadding(dp(8), dp(18), dp(8), dp(10))
-            }
-        )
-    }
-
-    scroll.addView(content)
-
-    panel.addView(
-        scroll,
-        LinearLayout.LayoutParams(-1, 0, 1f)
-    )
-
-    return panel
-}
-
-private fun addSection(
-    parent: LinearLayout,
-    name: String
-) {
-    val heading = makeText(name, 19f)
-    heading.typeface = Typeface.DEFAULT_BOLD
-
-    val params = LinearLayout.LayoutParams(-1, dp(55))
-    params.topMargin = dp(12)
-
-    parent.addView(heading, params)
-}
-
-private fun openSystemSettings(action: String) {
-    try {
-        startActivity(Intent(action))
-    } catch (e: Exception) {
-        startActivity(Intent(Settings.ACTION_SETTINGS))
-    }
-}
-
-private fun hardwareInfoText(): String {
-    val manager =
-        getSystemService(ACTIVITY_SERVICE) as android.app.ActivityManager
-
-    val memory = android.app.ActivityManager.MemoryInfo()
-    manager.getMemoryInfo(memory)
-
-    val storage = android.os.StatFs(
-        android.os.Environment.getDataDirectory().path
-    )
-
-    return """
-        Device: ${android.os.Build.MODEL}
-        Android: ${android.os.Build.VERSION.RELEASE}
-        Hardware: ${android.os.Build.HARDWARE}
-        Total RAM: ${formatBytes(memory.totalMem)}
-        Available RAM: ${formatBytes(memory.availMem)}
-        Total Storage: ${formatBytes(storage.totalBytes)}
-        Free Storage: ${formatBytes(storage.availableBytes)}
-    """.trimIndent()
-}
-
-private fun formatBytes(bytes: Long): String {
-    val gb = bytes / (1024.0 * 1024.0 * 1024.0)
-    return String.format("%.1f GB", gb)
-}
-  
+            content.addView(
+                makeText("Google TV Source", 16f).apply {
+                    setPadding(dp(8), dp(18), dp(8), dp(10))
+                }
+            )
 
             val info = makeText(
                 "Input switching is controlled by your TV system. Use the remote SOURCE / INPUT button if the TV does not provide an input settings screen.",
@@ -567,10 +511,67 @@ private fun formatBytes(bytes: Long): String {
             )
 
             info.setPadding(dp(5), dp(20), dp(5), dp(10))
-            panel.addView(info)
+            content.addView(info)
         }
 
+        scroll.addView(content)
+
+        panel.addView(
+            scroll,
+            LinearLayout.LayoutParams(-1, 0, 1f)
+        )
+
         return panel
+    }
+
+    private fun addSection(
+        parent: LinearLayout,
+        name: String
+    ) {
+
+        val heading = makeText(name, 19f)
+        heading.typeface = Typeface.DEFAULT_BOLD
+
+        val params = LinearLayout.LayoutParams(-1, dp(55))
+        params.topMargin = dp(12)
+
+        parent.addView(heading, params)
+    }
+
+    private fun openSystemSettings(action: String) {
+        try {
+            startActivity(Intent(action))
+        } catch (e: Exception) {
+            startActivity(Intent(Settings.ACTION_SETTINGS))
+        }
+    }
+
+    private fun hardwareInfoText(): String {
+
+        val manager =
+            getSystemService(ACTIVITY_SERVICE) as android.app.ActivityManager
+
+        val memory = android.app.ActivityManager.MemoryInfo()
+        manager.getMemoryInfo(memory)
+
+        val storage = StatFs(
+            android.os.Environment.getDataDirectory().path
+        )
+
+        return """
+            Device: ${android.os.Build.MODEL}
+            Android: ${android.os.Build.VERSION.RELEASE}
+            Hardware: ${android.os.Build.HARDWARE}
+            Total RAM: ${formatBytes(memory.totalMem)}
+            Available RAM: ${formatBytes(memory.availMem)}
+            Total Storage: ${formatBytes(storage.totalBytes)}
+            Free Storage: ${formatBytes(storage.availableBytes)}
+        """.trimIndent()
+    }
+
+    private fun formatBytes(bytes: Long): String {
+        val gb = bytes / (1024.0 * 1024.0 * 1024.0)
+        return String.format("%.1f GB", gb)
     }
 
     private fun openInputSettings() {
@@ -588,14 +589,18 @@ private fun formatBytes(bytes: Long): String {
     }
 
     private fun showPanel(panel: View) {
+
         val other = if (panel === leftPanel) rightPanel else leftPanel
         hidePanel(other)
 
         panel.visibility = View.VISIBLE
         root.bringChildToFront(panel)
 
-        val start = if (panel === leftPanel) -dp(panelWidth).toFloat()
-                    else dp(panelWidth).toFloat()
+        val start = if (panel === leftPanel) {
+            -dp(panelWidth).toFloat()
+        } else {
+            dp(panelWidth).toFloat()
+        }
 
         panel.translationX = start
 
@@ -609,10 +614,14 @@ private fun formatBytes(bytes: Long): String {
     }
 
     private fun hidePanel(panel: View) {
+
         if (panel.visibility != View.VISIBLE) return
 
-        val end = if (panel === leftPanel) -dp(panelWidth).toFloat()
-                  else dp(panelWidth).toFloat()
+        val end = if (panel === leftPanel) {
+            -dp(panelWidth).toFloat()
+        } else {
+            dp(panelWidth).toFloat()
+        }
 
         panel.animate()
             .translationX(end)
@@ -623,8 +632,13 @@ private fun formatBytes(bytes: Long): String {
             .start()
     }
 
-    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+    override fun onKeyDown(
+        keyCode: Int,
+        event: KeyEvent?
+    ): Boolean {
+
         when (keyCode) {
+
             KeyEvent.KEYCODE_MENU,
             KeyEvent.KEYCODE_SETTINGS -> {
                 showPanel(leftPanel)
@@ -637,6 +651,7 @@ private fun formatBytes(bytes: Long): String {
             }
 
             KeyEvent.KEYCODE_BACK -> {
+
                 if (leftPanel.visibility == View.VISIBLE) {
                     hidePanel(leftPanel)
                     return true
@@ -653,141 +668,144 @@ private fun formatBytes(bytes: Long): String {
     }
 
     override fun onBackPressed() {
+
         if (leftPanel.visibility == View.VISIBLE) {
             hidePanel(leftPanel)
+
         } else if (rightPanel.visibility == View.VISIBLE) {
             hidePanel(rightPanel)
+
         } else {
             super.onBackPressed()
-
-      
-private fun showBootAnimation() {
-    val boot = BootAnimationView()
-
-    root.addView(
-        boot,
-        FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT,
-            FrameLayout.LayoutParams.MATCH_PARENT
-        )
-    )
-
-    boot.bringToFront()
-
-    boot.postDelayed({
-        boot.animate()
-            .alpha(0f)
-            .setDuration(350)
-            .withEndAction {
-                root.removeView(boot)
-            }
-            .start()
-    }, 2600)
-}
-
-private inner class BootAnimationView : View(this@HomeActivity) {
-
-    private var angle = 0f
-
-    private val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        strokeWidth = dp(8).toFloat()
-    }
-
-    private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.WHITE
-        textAlign = Paint.Align.CENTER
-        typeface = Typeface.create(
-            "sans-serif",
-            Typeface.NORMAL
-        )
-    }
-
-    private val colors = intArrayOf(
-        Color.CYAN,
-        Color.BLUE,
-        Color.MAGENTA,
-        Color.RED,
-        Color.YELLOW,
-        Color.GREEN,
-        Color.CYAN
-    )
-
-    private val animator = ValueAnimator.ofFloat(0f, 360f).apply {
-        duration = 2200
-        repeatCount = ValueAnimator.INFINITE
-        interpolator = LinearInterpolator()
-
-        addUpdateListener {
-            angle = it.animatedValue as Float
-            invalidate()
         }
     }
 
-    override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
+    private fun showBootAnimation() {
 
-        canvas.drawColor(Color.BLACK)
+        val boot = BootAnimationView()
 
-        val boxWidth = minOf(width * 0.42f, dp(560).toFloat())
-        val boxHeight = boxWidth * 0.31f
-
-        val cx = width / 2f
-        val cy = height / 2f
-
-        val rect = RectF(
-            cx - boxWidth / 2,
-            cy - boxHeight / 2,
-            cx + boxWidth / 2,
-            cy + boxHeight / 2
+        root.addView(
+            boot,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
         )
 
-        val gradient = SweepGradient(
-            cx,
-            cy,
-            colors,
-            null
-        )
+        boot.bringToFront()
 
-        val matrix = Matrix()
-        matrix.setRotate(angle, cx, cy)
-        gradient.setLocalMatrix(matrix)
-
-        borderPaint.shader = gradient
-
-        canvas.drawRoundRect(
-            rect,
-            dp(28).toFloat(),
-            dp(28).toFloat(),
-            borderPaint
-        )
-
-        textPaint.textSize = boxHeight * 0.32f
-
-        val font = textPaint.fontMetrics
-        val baseline = cy - (font.ascent + font.descent) / 2
-
-        canvas.drawText(
-            "Google TV",
-            cx,
-            baseline,
-            textPaint
-        )
+        boot.postDelayed({
+            boot.animate()
+                .alpha(0f)
+                .setDuration(350)
+                .withEndAction {
+                    root.removeView(boot)
+                }
+                .start()
+        }, 2600)
     }
 
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-        animator.start()
-    }
+    private inner class BootAnimationView : View(this@HomeActivity) {
 
-    override fun onDetachedFromWindow() {
-        animator.cancel()
-        super.onDetachedFromWindow()
+        private var angle = 0f
+
+        private val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = dp(8).toFloat()
+        }
+
+        private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            textAlign = Paint.Align.CENTER
+            typeface = Typeface.create(
+                "sans-serif",
+                Typeface.NORMAL
+            )
+        }
+
+        private val colors = intArrayOf(
+            Color.CYAN,
+            Color.BLUE,
+            Color.MAGENTA,
+            Color.RED,
+            Color.YELLOW,
+            Color.GREEN,
+            Color.CYAN
+        )
+
+        private val animator = ValueAnimator.ofFloat(0f, 360f).apply {
+            duration = 2200
+            repeatCount = ValueAnimator.INFINITE
+            interpolator = LinearInterpolator()
+
+            addUpdateListener {
+                angle = it.animatedValue as Float
+                invalidate()
+            }
+        }
+
+        override fun onDraw(canvas: Canvas) {
+            super.onDraw(canvas)
+
+            canvas.drawColor(Color.BLACK)
+
+            val boxWidth = minOf(width * 0.42f, dp(560).toFloat())
+            val boxHeight = boxWidth * 0.31f
+
+            val cx = width / 2f
+            val cy = height / 2f
+
+            val rect = RectF(
+                cx - boxWidth / 2,
+                cy - boxHeight / 2,
+                cx + boxWidth / 2,
+                cy + boxHeight / 2
+            )
+
+            val gradient = SweepGradient(
+                cx,
+                cy,
+                colors,
+                null
+            )
+
+            val matrix = Matrix()
+            matrix.setRotate(angle, cx, cy)
+            gradient.setLocalMatrix(matrix)
+
+            borderPaint.shader = gradient
+
+            canvas.drawRoundRect(
+                rect,
+                dp(28).toFloat(),
+                dp(28).toFloat(),
+                borderPaint
+            )
+
+            textPaint.textSize = boxHeight * 0.32f
+
+            val font = textPaint.fontMetrics
+            val baseline = cy - (font.ascent + font.descent) / 2
+
+            canvas.drawText(
+                "Google TV",
+                cx,
+                baseline,
+                textPaint
+            )
+        }
+
+        override fun onAttachedToWindow() {
+            super.onAttachedToWindow()
+            animator.start()
+        }
+
+        override fun onDetachedFromWindow() {
+            animator.cancel()
+            super.onDetachedFromWindow()
+        }
     }
 }
-}
-    
-
 
 
 
